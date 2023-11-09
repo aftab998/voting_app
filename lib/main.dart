@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:voting_app/screens/login/login.dart';
+import 'package:voting_app/screens/election_post/electionPost.dart';
+import 'package:voting_app/screens/home/home.dart';
+
 
 void main() {
   runApp(const MyApp());
@@ -33,7 +35,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const login(),
+      home: electionPost(),
     );
   }
 }
