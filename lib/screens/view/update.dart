@@ -1,35 +1,54 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:http/http.dart';
-import 'package:voting_app/screens/view/update.dart';
+import 'package:voting_app/model/electionModel.dart';
 
-class electionPost extends StatefulWidget {
-  const electionPost({super.key});
+class update extends StatefulWidget {
+  const update({super.key});
 
   @override
-  State<electionPost> createState() => _electionPostState();
+  State<update> createState() => _updateState();
 }
 
-class _electionPostState extends State<electionPost> {
-  String dropdownvalue = 'Upcoming';
+class _updateState extends State<update> {
+  List<electionModel> postList = [];
+  Future<List<electionModel>> apihit() async {
+    final response = await http
+        .get(Uri.parse("https://alelection.blogvali.com/api/elections"));
+    var data = jsonDecode(response.body.toString());
+    print(data);
+    if (response.statusCode == 200) {
+      for (Map<String, dynamic> i in data) {
+        postList.add(electionModel.fromJson(i));
 
+        nameController.text = data['name'];
+        dateController.text = data['date'];
+        timeController.text = data['time'];
+        descController.text = data['description'];
+         dropdownvalue = data['status'];
+      }
+      return postList;
+    } else {
+      return postList;
+    }
+  }
+ 
+   String  dropdownvalue = '';
   // List of items in our dropdown menu
   var items = [
     'Upcoming',
     'Ongoing',
     'Completed',
   ];
-
-  final TextEditingController nameController = TextEditingController();
-  final TextEditingController dateController = TextEditingController();
-  final TextEditingController timeController = TextEditingController();
-  final TextEditingController descController = TextEditingController();
-
-  void electionPost(String name, String date, String time, String desc,
+  final nameController = TextEditingController();
+  final dateController = TextEditingController();
+  final timeController = TextEditingController();
+  final descController = TextEditingController();
+   void updatePost(String name, String date, String time, String desc,
       String dropData) async {
     try {
-      Response response = await post(
+      Response response = await put(
           Uri.parse('https://alelection.blogvali.com/api/elections'),
           body: {
             "Name": name,
@@ -56,53 +75,23 @@ class _electionPostState extends State<electionPost> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.green,
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          Stack(
-            alignment: AlignmentDirectional.bottomEnd,
-            children: [
-              Container(
-                height: 600,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(20),
-                    topRight: Radius.circular(20),
-                  ),
-                ),
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 10.0),
-                  child: Align(
-                    alignment: Alignment.topCenter,
-                    child: Text("Create a Post",
-                        style: TextStyle(fontSize: 24, color: Colors.black)),
-                  ),
-                ),
-              ),
-              Container(
-                height: 540,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(20),
-                      topRight: Radius.circular(20),
-                    )),
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 10.0),
-                      child: Column(
-                        children: [
-                          Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 40.0),
-                            child: Container(
-                                child: Column(
-                              children: [
+      body: FutureBuilder(
+          future: apihit(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return Center(child: Text('Loading'));
+            } else {
+              return ListView.builder(
+                  itemCount: postList.length,
+                  itemBuilder: (context, index) {
+                    return Card(
+                      elevation: 6,
+                      child: ListTile(
+                        onTap: () {
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) => AlertDialog(
+                              title: Column(children: [
                                 TextFormField(
                                   controller: nameController,
                                   decoration: InputDecoration(
@@ -142,7 +131,7 @@ class _electionPostState extends State<electionPost> {
                                               BorderSide(color: Colors.green)),
                                       labelText: 'Description'),
                                 ),
-                                const SizedBox(height: 10),
+                                         const SizedBox(height: 10),
                                 DropdownButton(
                                   value: dropdownvalue,
                                   icon: const Icon(Icons.keyboard_arrow_down),
@@ -158,14 +147,10 @@ class _electionPostState extends State<electionPost> {
                                     });
                                   },
                                 ),
-                                const SizedBox(height: 15),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceEvenly,
-                                  children: [
-                                    GestureDetector(
+                                const SizedBox(height: 10),
+                                GestureDetector(
                                       onTap: () {
-                                        electionPost(
+                                       updatePost(
                                           nameController.text.toString(),
                                           dateController.text.toString(),
                                           timeController.text.toString(),
@@ -181,7 +166,7 @@ class _electionPostState extends State<electionPost> {
                                               borderRadius:
                                                   BorderRadius.circular(30)),
                                           child: Center(
-                                            child: Text("POST",
+                                            child: Text("Update",
                                                 style: TextStyle(
                                                     fontSize: 18,
                                                     color: Colors.white,
@@ -189,45 +174,25 @@ class _electionPostState extends State<electionPost> {
                                                         FontWeight.bold)),
                                           )),
                                     ),
-                                    GestureDetector(
-                                      onTap: () {
-                                        Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                                builder: (context) =>
-                                                    update()));
-                                      },
-                                      child: Container(
-                                          height: 60,
-                                          width: 160,
-                                          decoration: BoxDecoration(
-                                              color: Colors.green,
-                                              borderRadius:
-                                                  BorderRadius.circular(30)),
-                                          child: Center(
-                                            child: Text("view",
-                                                style: TextStyle(
-                                                    fontSize: 18,
-                                                    color: Colors.white,
-                                                    fontWeight:
-                                                        FontWeight.bold)),
-                                          )),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            )),
-                          )
-                        ],
+                              ]),
+                            ),
+                          );
+                        },
+                        leading: Text(postList[index].electionID.toString()),
+                        title: Text(postList[index].name.toString()),
+                        subtitle: Text(postList[index].description.toString()),
+                        trailing: Column(
+                          children: [
+                            Text(postList[index].time.toString()),
+                            Text(postList[index].date.toString()),
+                            Text(postList[index].status.toString())
+                          ],
+                        ),
                       ),
-                    )
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+                    );
+                  });
+            }
+          }),
     );
   }
 }
